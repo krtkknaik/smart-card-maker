@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="mr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12345a">
+<title>Smart Card Maker</title>
+<style>
+:root{--navy:#12345a;--blue:#2463eb;--ink:#172033;--muted:#64748b;--line:#dbe3ef;--bg:#f3f6fb;--card:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans Devanagari",Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(120deg,#102b4c,#2456a6);color:white;padding:22px max(16px,calc((100% - 1180px)/2));}
+header h1{margin:0;font-size:clamp(1.35rem,3vw,2rem)}header p{margin:6px 0 0;color:#dbeafe}
+main{max-width:1180px;margin:20px auto;padding:0 14px 36px}.layout{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:18px;align-items:start}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 20px #193b6810}
+h2{font-size:1.1rem;margin:0 0 14px}.field{margin:0 0 12px}.field label{display:block;font-size:.88rem;font-weight:650;margin-bottom:5px}
+input,textarea,select,button{font:inherit}input:not([type=file]),textarea,select{width:100%;padding:10px 11px;border:1px solid #cbd5e1;border-radius:9px;background:white;color:var(--ink)}textarea{min-height:72px;resize:vertical}input[type=file]{width:100%;font-size:.85rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button{border:0;border-radius:10px;padding:10px 13px;cursor:pointer;font-weight:700;background:var(--blue);color:white}button.secondary{background:#e8eef8;color:#19385f}button.dark{background:#12345a}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+.hint{font-size:.8rem;color:var(--muted);line-height:1.45}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.tabs button{background:#e4ebf6;color:#23405f}.tabs button.active{background:var(--navy);color:#fff}
+.previewHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.previewHead h2{margin:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:14px}
+.idcard{--accent:#1e4f91;background:white;border:1px solid #cbd5e1;border-radius:12px;overflow:hidden;position:relative;min-height:190px;box-shadow:0 4px 14px #0f172a12;break-inside:avoid}
+.cardTop{background:var(--accent);color:white;padding:12px 14px;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cardTop small{font-size:.7rem;opacity:.9;display:block;font-weight:500}.cardBody{display:flex;gap:12px;padding:14px;align-items:center}
+.photo{width:78px;height:88px;object-fit:cover;border:2px solid #dbeafe;border-radius:8px;background:#eaf0f7;flex-shrink:0}
+.details{min-width:0;flex:1}.details h3{font-size:1rem;margin:0 0 7px;overflow-wrap:anywhere}.details p{font-size:.76rem;margin:4px 0;color:#475569;overflow-wrap:anywhere;white-space:pre-wrap}
+.qr{width:64px;height:64px;object-fit:contain;flex-shrink:0}.footer{border-top:1px solid #e2e8f0;padding:7px 12px;font-size:.68rem;color:#64748b;display:flex;justify-content:space-between;gap:8px}
+.theme-classic{--accent:#1e293b;border-radius:4px}.theme-green{--accent:#176b55}.theme-purple{--accent:#6d28d9}.theme-orange{--accent:#b45309}.theme-minimal .cardTop{background:#f1f5f9;color:#1e293b;border-bottom:3px solid var(--accent)}.theme-minimal{--accent:#2563eb}
+.empty{padding:38px 16px;text-align:center;color:#64748b;border:1px dashed #cbd5e1;border-radius:12px}
+#bulkPanel{display:none;margin-top:16px}.templateSwatches{display:flex;gap:8px;flex-wrap:wrap}.swatch{border:2px solid transparent;padding:8px 10px;border-radius:8px;background:#f1f5f9;color:#334155;font-size:.82rem}.swatch.selected{border-color:#2563eb;background:#eff6ff}
+footer{text-align:center;color:#64748b;font-size:.8rem;padding:18px}
+@media(max-width:820px){.layout{grid-template-columns:1fr}.panel{padding:15px}.previewHead{align-items:flex-start}}
+@media print{body{background:white}header, .formPanel,.previewHead,.no-print,footer{display:none!important}main{max-width:none;margin:0;padding:0}.layout{display:block}.panel{border:0;box-shadow:none;padding:0}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:8mm}.idcard{box-shadow:none;page-break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}.cards:empty{display:none}@page{size:A4;margin:12mm}}
+</style>
+</head>
+<body>
+<header><h1>Smart Card Maker <span style="font-size:.65em;font-weight:500">| स्मार्ट कार्ड मेकर</span></h1><p>Create cards • कार्ड तयार करा • QR • Bulk CSV • Print / PDF</p></header>
+<main>
+<div class="layout">
+<section class="panel formPanel">
+<div class="tabs no-print"><button id="singleTab" class="active" type="button">एक कार्ड / Single</button><button id="bulkTab" type="button">Bulk CSV</button></div>
+<div id="singlePanel">
+<h2>कार्डची माहिती / Card details</h2>
+<div class="field"><label for="cardType">कार्डचा प्रकार / Card type</label><select id="cardType"><option>ID Card / ओळखपत्र</option><option>Visiting Card / व्हिजिटिंग कार्ड</option><option>Business Card / बिझनेस कार्ड</option><option>Event Pass / इव्हेंट पास</option><option>Membership Card / सदस्यत्व कार्ड</option><option>General Card / इतर कार्ड</option></select></div>
+<div class="field"><label for="titleText">संस्था / शीर्षक / Organization or title</label><input id="titleText" placeholder="उदा. ABC Institute / Your business"></div>
+<div class="field"><label for="name">पूर्ण नाव / Full name *</label><input id="name" placeholder="नाव लिहा / Enter name"></div>
+<div class="row"><div class="field"><label for="phone">मोबाईल / Mobile</label><input id="phone" type="tel" placeholder="Mobile number"></div><div class="field"><label for="role">पद / Role</label><input id="role" placeholder="Student / Manager"></div></div>
+<div class="field"><label for="address">पत्ता / Address</label><textarea id="address" placeholder="पत्ता / Address"></textarea></div>
+<div class="field"><label for="extra">अतिरिक्त माहिती / Extra details</label><input id="extra" placeholder="ID, email, expiry, etc."></div>
+<div class="field"><label for="photoInput">फोटो अपलोड / Upload photo</label><input id="photoInput" type="file" accept="image/*"><p class="hint">फोटो फक्त या ब्राउझरमध्ये वापरला जातो; सर्व्हरवर अपलोड होत नाही.</p></div>
+<div class="field"><label>टेम्पलेट / Template</label><div class="templateSwatches">
+<button class="swatch selected" data-theme="theme-blue" type="button">Blue</button><button class="swatch" data-theme="theme-classic" type="button">Classic</button><button class="swatch" data-theme="theme-green" type="button">Green</button><button class="swatch" data-theme="theme-purple" type="button">Purple</button><button class="swatch" data-theme="theme-orange" type="button">Orange</button><button class="swatch" data-theme="theme-minimal" type="button">Minimal</button>
+</div></div>
+<div class="field"><label for="qrContent">QR मध्ये काय ठेवायचे? / QR content</label><select id="qrContent"><option value="details">कार्डची माहिती / Card details</option><option value="contact">Contact (vCard)</option><option value="website">वेबसाइट लिंक / Website link</option><option value="none">QR नको / No QR</option></select></div>
+<div class="field" id="websiteField" style="display:none"><label for="website">वेबसाइट लिंक / Website URL</label><input id="website" placeholder="https://example.com"></div>
+<div class="actions"><button id="updateBtn" type="button">Preview अपडेट करा / Update</button><button id="clearBtn" class="secondary" type="button">फॉर्म साफ करा / Clear</button></div>
+</div>
+<div id="bulkPanel">
+<h2>एकाच वेळी अनेक कार्ड / Bulk cards</h2>
+<p class="hint">CSV फाइलमध्ये name, phone, address, title, role, extra आणि photo हे कॉलम वापरा. photo कॉलममधील फाइलनावाशी जुळणारा फोटो खालील फोटो फाइल्समध्ये निवडा.</p>
+<div class="field"><label for="csvInput">CSV फाइल / Choose CSV</label><input id="csvInput" type="file" accept=".csv,text/csv"></div>
+<div class="field"><label for="bulkPhotos">ऐच्छिक फोटो फाइल्स / Optional photo files</label><input id="bulkPhotos" type="file" accept="image/*" multiple></div>
+<div class="field"><label for="bulkTemplate">सर्व कार्ड्सचा टेम्पलेट / Template for all</label><select id="bulkTemplate"><option value="theme-blue">Blue</option><option value="theme-classic">Classic</option><option value="theme-green">Green</option><option value="theme-purple">Purple</option><option value="theme-orange">Orange</option><option value="theme-minimal">Minimal</option></select></div>
+<div class="actions"><button id="sampleCsv" class="secondary" type="button">नमुना CSV डाउनलोड / Sample CSV</button><button id="makeBulk" type="button">CSV मधून कार्ड तयार करा / Create cards</button></div>
+<p class="hint">सूचना: CSV फाइल UTF-8 मध्ये सेव्ह करा. मोठ्या फाइलसाठी आधी 5–10 रेकॉर्डची चाचणी करा.</p>
+</div>
+</section>
+<section class="panel">
+<div class="previewHead"><div><h2>कार्ड प्रिव्ह्यू / Card preview</h2><div id="count" class="hint">1 card</div></div><div class="actions no-print" style="margin:0"><button id="printBtn" class="dark" type="button">PDF / Print</button><button id="downloadData" class="secondary" type="button">CSV Export</button></div></div>
+<div id="cards" class="cards"><div class="empty">तुमची माहिती भरा आणि Preview अपडेट करा.</div></div>
+<p class="hint no-print" style="margin-top:12px">PDF साठी “PDF / Print” निवडा आणि प्रिंट विंडोमध्ये “Save as PDF” निवडा. प्रिंटमध्ये background graphics चालू केल्यास रंग अधिक चांगले दिसतील.</p>
+</section>
+</div>
+</main>
+<footer>Free browser-based tool • No login • No server-side storage • GitHub Pages compatible</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let theme='theme-blue', records=[], currentPhoto='', photoMap={};
+const safe=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fields=['titleText','name','phone','role','address','extra'];
+function readForm(){return {type:$('cardType').value,title:$('titleText').value.trim(),name:$('name').value.trim(),phone:$('phone').value.trim(),role:$('role').value.trim(),address:$('address').value.trim(),extra:$('extra').value.trim(),photo:currentPhoto,theme,qr:$('qrContent').value,website:$('website').value.trim()}}
+function qrPayload(r){if(r.qr==='none')return '';if(r.qr==='website')return r.website||'https://example.com';if(r.qr==='contact')return 'BEGIN:VCARD\nVERSION:3.0\nFN:'+r.name+'\nTEL:'+r.phone+'\nADR:;;'+r.address.replace(/\n/g,' ' )+'\nEND:VCARD';return [r.type,r.title,r.name,r.phone,r.role,r.address,r.extra].filter(Boolean).join('\n')}
+function renderCard(r,index){const el=document.createElement('article');el.className='idcard '+(r.theme||'theme-blue');const photo=r.photo?`<img class="photo" alt="Photo" src="${r.photo}">`:`<div class="photo" style="display:flex;align-items:center;justify-content:center;color:#64748b;font-size:12px">PHOTO</div>`;
+el.innerHTML=`<div class="cardTop"><div>${safe(r.title||r.type||'SMART CARD')}<small>${safe(r.type||'Card')}</small></div><span style="font-size:.68rem">#${index+1}</span></div><div class="cardBody">${photo}<div class="details"><h3>${safe(r.name||'Your Name')}</h3>${r.role?`<p>${safe(r.role)}</p>`:''}${r.phone?`<p>☎ ${safe(r.phone)}</p>`:''}${r.address?`<p>⌖ ${safe(r.address)}</p>`:''}${r.extra?`<p>${safe(r.extra)}</p>`:''}</div><div class="qr" aria-label="QR code"></div></div><div class="footer"><span>SMART CARD MAKER</span><span>${safe(r.phone||'')}</span></div>`;
+const qrel=el.querySelector('.qr'),payload=qrPayload(r);if(payload&&window.QRCode){qrel.innerHTML='';new QRCode(qrel,{text:payload,width:64,height:64,colorDark:'#111827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}else qrel.remove();return el}
+function showCards(list){records=list;$('cards').innerHTML='';if(!list.length){$('cards').innerHTML='<div class="empty">कार्ड तयार करण्यासाठी माहिती भरा.</div>';$('count').textContent='0 cards';return}list.forEach((r,i)=>$('cards').appendChild(renderCard(r,i)));$('count').textContent=list.length+' card(s) • कार्ड्स'}
+function updateSingle(){const r=readForm();if(!r.name){$('name').focus();alert('कृपया नाव भरा / Please enter a name.');return}showCards([r])}
+$('photoInput').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){alert('Please choose an image file.');return}const reader=new FileReader();reader.onload=()=>{currentPhoto=reader.result;updateSingle()};reader.readAsDataURL(f)});
+document.querySelectorAll('.swatch').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');theme=b.dataset.theme;if($('name').value.trim())updateSingle()}));
+$('qrContent').addEventListener('change',()=>{$('websiteField').style.display=$('qrContent').value==='website'?'block':'none';if($('name').value.trim())updateSingle()});
+$('updateBtn').onclick=updateSingle;
+$('clearBtn').onclick=()=>{fields.forEach(id=>$(id).value='');$('photoInput').value='';currentPhoto='';$('website').value='';$('cardType').selectedIndex=0;$('qrContent').value='details';$('websiteField').style.display='none';updateSingle()};
+$('singleTab').onclick=()=>{ $('singlePanel').style.display='block';$('bulkPanel').style.display='none';$('singleTab').classList.add('active');$('bulkTab').classList.remove('active')};
+$('bulkTab').onclick=()=>{ $('singlePanel').style.display='none';$('bulkPanel').style.display='block';$('bulkTab').classList.add('active');$('singleTab').classList.remove('active')};
+$('printBtn').onclick=()=>{if(!records.length){alert('आधी कार्ड तयार करा / Create cards first.');return}window.print()};
+function csvParse(text){let rows=[],row=[],cell='',q=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'&&q&&text[i+1]==='"'){cell+='"';i++}else if(c==='"'){q=!q}else if(c===','&&!q){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell=''}else cell+=c}row.push(cell);if(row.some(x=>x.trim()))rows.push(row);if(!rows.length)return [];const headers=rows.shift().map(h=>h.trim().toLowerCase().replace(/^\uFEFF/,''));return rows.map(cols=>Object.fromEntries(headers.map((h,i)=>[h,(cols[i]||'').trim()])))}
+$('bulkPhotos').addEventListener('change',async e=>{photoMap={};for(const f of e.target.files){photoMap[f.name]=await new Promise(res=>{const rd=new FileReader();rd.onload=()=>res(rd.result);rd.readAsDataURL(f)})}});
+$('makeBulk').onclick=async()=>{const f=$('csvInput').files[0];if(!f){alert('CSV फाइल निवडा / Choose a CSV file.');return}try{const rows=csvParse(await f.text());if(!rows.length){alert('CSV रिकामी आहे / CSV is empty.');return}const t=$('bulkTemplate').value;const list=rows.filter(r=>r.name).map(r=>({type:r.type||'ID Card / ओळखपत्र',title:r.title||'',name:r.name,phone:r.phone||'',role:r.role||'',address:r.address||'',extra:r.extra||'',photo:photoMap[r.photo]||'',theme:t,qr:'details',website:''}));if(!list.length){alert('CSV मध्ये name कॉलम आवश्यक आहे / CSV needs a name column.');return}showCards(list)}catch(err){alert('CSV वाचता आली नाही. Format तपासा. / Could not read CSV. Check format.')}};
+function download(name,content,type='text/csv;charset=utf-8;'){const blob=new Blob(['\ufeff'+content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$('sampleCsv').onclick=()=>download('smart-card-sample.csv','name,phone,address,title,role,extra,photo\nAsha Patil,9876543210,"Pune, Maharashtra",ABC Institute,Student,ID-001,asha.jpg\nRahul More,9123456780,"Nashik, Maharashtra",ABC Institute,Teacher,ID-002,rahul.jpg');
+$('downloadData').onclick=()=>{if(!records.length){alert('No cards to export.');return}const keys=['type','title','name','phone','role','address','extra'];const esc=v=>'"'+String(v??'').replace(/"/g,'""')+'"';download('smart-card-data.csv',[keys.join(','),...records.map(r=>keys.map(k=>esc(r[k])).join(','))].join('\n'))};
+$('website').addEventListener('change',()=>{if($('name').value.trim())updateSingle()});
+showCards([]);
+</script>
+</body></html>
